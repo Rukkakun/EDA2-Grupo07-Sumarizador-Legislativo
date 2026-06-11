@@ -5,8 +5,8 @@ from pathlib import Path
 import fitz
 
 from estruturas.tabelaHash import TabelaHash
-from processamento.bloco1 import processarBloco1
-from processamento.extratorPdf import extrairTextoPdf
+from processamento.extratorPDF import extrairTextoPdf
+from processamento.main import processarBloco1
 from processamento.limpezaEstrutural import extrairDiscursosDeTexto
 
 

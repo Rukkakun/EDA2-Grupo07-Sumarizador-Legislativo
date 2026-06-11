@@ -3,10 +3,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from estruturas.tabelaHash import TabelaHash
-from processamento.analisadorPln import normalizarFrase as normalizarFrasePadrao
 from processamento.discurso import DiscursoProcessado
-from processamento.extratorPdf import extrairTextoPdf
+from processamento.extratorPDF import extrairTextoPdf
 from processamento.limpezaEstrutural import extrairDiscursosDeTexto
+from processamento.processadorPLN import normalizarFrase as normalizarFrasePadrao
 
 
 @dataclass

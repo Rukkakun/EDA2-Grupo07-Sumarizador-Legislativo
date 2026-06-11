@@ -123,13 +123,13 @@ class TabelaHash:
             self.quantidade += 1
 
     def _hash1(self, chave):
-        return self._calcularHashHorner(chave, self.tamanho)
+        return self._mapearStringParaInteiro(chave, self.tamanho)
 
     def _hash2(self, chave):
-        return 1 + self._calcularHashHorner(chave, self.tamanho - 2)
+        return 1 + self._mapearStringParaInteiro(chave, self.tamanho - 2)
 
     @staticmethod
-    def _calcularHashHorner(chave, modulo):
+    def _mapearStringParaInteiro(chave, modulo):
         valor = 0
         for caractere in chave:
             valor = (valor * 256 + ord(caractere)) % modulo
