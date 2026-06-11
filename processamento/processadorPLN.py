@@ -18,14 +18,31 @@ def carregarModeloPln():
 def normalizarFrase(frase, modelo=None):
     modelo = modelo or carregarModeloPln()
     documento = modelo(frase)
+    return _extrairTokens(documento)
+
+
+def normalizarFrasesEmLote(frases, modelo=None):
+    modelo = modelo or carregarModeloPln()
+    resultados = []
+
+    for documento in modelo.pipe(frases):
+        resultados.append(_extrairTokens(documento))
+
+    return resultados
+
+
+def _extrairTokens(documento):
     tokens = []
 
     for token in documento:
+        # is_space: descarta espaços, tabs e quebras de linha
+        # is_punct: descarta pontuação
+        # is_stop: descarta stopwords 
+        # like_num: descarta tokens numéricos
         if token.is_space or token.is_punct or token.is_stop or token.like_num:
             continue
-
-        termo = token.lemma_ if token.lemma_ else token.text
-        termo = normalizarTermo(termo)
+            
+        termo = normalizarTermo(token.lemma_ or token.text)
 
         if termo and termo.isalpha():
             tokens.append(termo)

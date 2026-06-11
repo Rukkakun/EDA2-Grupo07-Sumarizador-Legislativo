@@ -10,8 +10,15 @@ ABREVIACOES = {
     "Sras.": "Sras<prd>",
     "V.Exa.": "V<prd>Exa<prd>",
     "V.Exas.": "V<prd>Exas<prd>",
-    "S.Paulo": "S<prd>Paulo",
 }
+
+_PADROES_CABECALHO = [
+    re.compile(r"^Sessão de:"),
+    re.compile(r"^Notas Taquigráficas$"),
+    re.compile(r"^CÂMARA DOS DEPUTADOS$"),
+    re.compile(r"^DEPARTAMENTO DE REGISTRO OFICIAL"),
+    re.compile(r"^\d+/\d+$"),
+]
 
 
 def limparRuidoEstrutural(texto):
@@ -82,14 +89,7 @@ def _normalizarEspacos(texto):
 
 
 def _ehCabecalhoOuPaginacao(linha):
-    padroes = [
-        r"^Sessão de:",
-        r"^Notas Taquigráficas$",
-        r"^CÂMARA DOS DEPUTADOS$",
-        r"^DEPARTAMENTO DE REGISTRO OFICIAL",
-        r"^\d+/\d+$",
-    ]
-    return any(re.search(padrao, linha) for padrao in padroes)
+    return any(padrao.search(linha) for padrao in _PADROES_CABECALHO)
 
 
 def _ehTituloCaixaAlta(linha):

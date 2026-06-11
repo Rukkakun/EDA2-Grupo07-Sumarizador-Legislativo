@@ -3,7 +3,7 @@ from pathlib import Path
 import fitz
 
 
-def extrairTextoPdf(caminhoPdf):
+def extrairTextoPdf(caminhoPdf: str | Path) -> str:
     caminhoPdf = Path(caminhoPdf)
     partesTexto = []
 
