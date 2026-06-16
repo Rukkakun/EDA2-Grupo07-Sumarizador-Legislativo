@@ -64,6 +64,63 @@ A SRA. MARIA SOUZA (Partido - UF) - Famílias precisam de proteção pública.
         self.assertNotIn("JOÃO", discursos[0].frase)
 
 
+    def testRemoveRuidoDasNotasDeComissoes(self):
+        texto = """
+Reunião de: 10/02/2026
+Notas Taquigráficas - Comissões
+CÂMARA DOS DEPUTADOS
+Registro oficial sem redação final.
+1 / 15
+A SRA. PRESIDENTE (Juliana Cardoso. Bloco/PT - SP) - Este aqui a Deputada fez o registro.
+(Não identificado) - (Intervenção fora do microfone. Inaudível.)
+Pode ser?
+(Não identificado) - Ele vai concorrer...
+2 / 15
+Reunião de: 10/02/2026
+Notas Taquigráficas - Comissões
+O SR. AIRTON FALEIRO (Bloco/PT - PA) - A Amazônia precisa ser protegida.
+"""
+
+        discursos = extrairDiscursosDeTexto(texto)
+        frases = [discurso.frase for discurso in discursos]
+
+        self.assertEqual(frases, [
+            "Este aqui a Deputada fez o registro.",
+            "Pode ser?",
+            "A Amazônia precisa ser protegida.",
+        ])
+        self.assertFalse(any("Notas Taquigráficas" in frase for frase in frases))
+        self.assertFalse(any("Reunião de:" in frase for frase in frases))
+        self.assertFalse(any("Não identificado" in frase for frase in frases))
+
+
+    def testRemoveRubricasTaquigraficasGenericas(self):
+        texto = """
+O SR. TESTE (PARTIDO - UF) - Começamos a reunião. (Pausa prolongada.)
+(Pausa)
+Continuamos os trabalhos. (Desligamento do microfone.)
+(Intervenção fora do microfone. Inaudível.)
+Houve acordo. (Risos.) (Palmas.)
+(Manifestação em língua indígena.)
+(Procede-se ao descerramento de placa de homenagem.)
+Este trecho mantém uma referência comum (art. 5º do Ato da Mesa).
+"""
+
+        discursos = extrairDiscursosDeTexto(texto)
+        frases = [discurso.frase for discurso in discursos]
+
+        self.assertEqual(frases, [
+            "Começamos a reunião.",
+            "Continuamos os trabalhos.",
+            "Houve acordo.",
+            "Este trecho mantém uma referência comum (art. 5º do Ato da Mesa).",
+        ])
+        self.assertFalse(any("Pausa" in frase for frase in frases))
+        self.assertFalse(any("microfone" in frase for frase in frases))
+        self.assertFalse(any("Risos" in frase for frase in frases))
+        self.assertFalse(any("Palmas" in frase for frase in frases))
+
+
 class TestBloco1(unittest.TestCase):
     def testProcessaApenasFraseEmTokensEBitsets(self):
         texto = """

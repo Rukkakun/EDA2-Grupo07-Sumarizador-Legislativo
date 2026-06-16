@@ -10,23 +10,53 @@ ABREVIACOES = {
     "Sras.": "Sras<prd>",
     "V.Exa.": "V<prd>Exa<prd>",
     "V.Exas.": "V<prd>Exas<prd>",
+    "O.k.": "O<prd>k<prd>",
+    "art.": "art<prd>",
 }
 
 _PADROES_CABECALHO = [
-    re.compile(r"^Sessão de:"),
-    re.compile(r"^Notas Taquigráficas$"),
+    re.compile(r"^(Sessão|Reunião) de:"),
+    re.compile(r"^Notas Taquigráficas(?: - Comissões)?$"),
     re.compile(r"^CÂMARA DOS DEPUTADOS$"),
     re.compile(r"^DEPARTAMENTO DE REGISTRO OFICIAL"),
-    re.compile(r"^\d+/\d+$"),
+    re.compile(r"^Registro oficial sem redação final\.$"),
+    re.compile(r"^\d+\s*/\s*\d+$"),
 ]
+
+_PADRAO_RUBRICA_TAQUIGRAFICA = re.compile(
+    r"\((?=[^)]*(?:"
+    r"pausa|"
+    r"intervenção|"
+    r"intervencao|"
+    r"microfone|"
+    r"inaudível|"
+    r"inaudivel|"
+    r"ininteligível|"
+    r"ininteligivel|"
+    r"risos|"
+    r"palmas|"
+    r"manifestação|"
+    r"manifestacao|"
+    r"procede-se|"
+    r"descerramento"
+    r"))[^)]*\)",
+    re.IGNORECASE,
+)
 
 
 def limparRuidoEstrutural(texto):
     linhasLimpas = []
 
     for linha in texto.splitlines():
-        linha = re.sub(r"\([^)]*\bPausa\.\)", "", linha)
         linha = linha.strip()
+
+        if not linha:
+            continue
+
+        if re.match(r"^\(Não identificado\)\s+-\s+", linha):
+            continue
+
+        linha = _removerRubricasTaquigraficas(linha).strip()
 
         if not linha:
             continue
@@ -43,6 +73,10 @@ def limparRuidoEstrutural(texto):
         linhasLimpas.append(linha)
 
     return "\n".join(linhasLimpas)
+
+
+def _removerRubricasTaquigraficas(linha):
+    return _PADRAO_RUBRICA_TAQUIGRAFICA.sub("", linha)
 
 
 def extrairDiscursosDeTexto(texto):

@@ -3,9 +3,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from estruturas.tabelaHash import TabelaHash
+from processamento.centralidadeGrau import processarBloco3, salvarResultadoBloco3
 from processamento.discurso import DiscursoProcessado
 from processamento.extratorPDF import extrairTextoPdf
 from processamento.limpezaEstrutural import extrairDiscursosDeTexto
+from processamento.modelagemGrafo import processarBloco2, salvarDiscursosGrafo, salvarResultadoBloco2
 from processamento.processadorPLN import normalizarFrasesEmLote
 
 
@@ -128,7 +130,13 @@ def main():
     resultado = processarPdfBloco1(caminhoEntrada)
     salvarResultadoBloco1(resultado, diretorioSaida)
     salvarVisualizacaoHash(resultado.vocabulario, diretorioSaida / "tabelaHash.txt")
+    resultadoGrafo = processarBloco2(resultado.discursos)
+    salvarResultadoBloco2(resultadoGrafo, diretorioSaida)
+    salvarDiscursosGrafo(resultadoGrafo, diretorioSaida)
+    resultadoCentralidade = processarBloco3(resultadoGrafo.grafo)
+    salvarResultadoBloco3(resultadoCentralidade, diretorioSaida)
     print(f"Discursos processados: {len(resultado.discursos)}")
+    print(f"Matriz de adjacÃªncia: {resultadoGrafo.grafo.quantidadeVertices} x {resultadoGrafo.grafo.quantidadeVertices}")
     print(f"Vocabulário: {resultado.vocabulario.quantidade} termos")
     print(f"Saída: {diretorioSaida}")
 
