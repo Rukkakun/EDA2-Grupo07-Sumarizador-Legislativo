@@ -6,7 +6,7 @@ import fitz
 
 from estruturas.tabelaHash import TabelaHash
 from processamento.extratorPDF import extrairTextoPdf
-from processamento.main import processarBloco1
+from processamento.main import tokenizarDiscursos
 from processamento.limpezaEstrutural import extrairDiscursosDeTexto
 
 
@@ -129,7 +129,7 @@ A SRA. MARIA SOUZA (Partido - UF) - Famílias precisam de proteção pública.
 """
         discursos = extrairDiscursosDeTexto(texto)
 
-        resultado = processarBloco1(discursos, normalizarFrase=normalizarFraseFake)
+        resultado = tokenizarDiscursos(discursos, normalizarFrase=normalizarFraseFake)
 
         self.assertEqual(resultado.vocabulario.quantidade, 6)
         self.assertEqual(resultado.discursos[0].orador, "JOÃO SILVA (Partido - UF)")

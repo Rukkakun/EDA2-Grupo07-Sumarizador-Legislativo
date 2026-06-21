@@ -16,9 +16,9 @@ from estruturas.grafoMatriz import (
 from processamento.discurso import DiscursoProcessado
 from processamento.modelagemGrafo import (
     calcularIndiceJaccard,
-    processarBloco2,
+    construirGrafoSimilaridade,
     salvarDiscursosGrafo,
-    salvarResultadoBloco2,
+    salvarMatrizAdjacencia,
 )
 
 
@@ -61,7 +61,7 @@ class TestModelagemGrafo(unittest.TestCase):
             DiscursoProcessado(orador="C", frase="frase 3", tokens=[3], bitset=0b1000),
         ]
 
-        resultado = processarBloco2(discursos)
+        resultado = construirGrafoSimilaridade(discursos)
 
         self.assertEqual(resultado.grafo.quantidadeVertices, 3)
         self.assertEqual([discurso.frase for discurso in resultado.discursos], ["frase 1", "frase 2", "frase 3"])
@@ -76,10 +76,10 @@ class TestModelagemGrafo(unittest.TestCase):
             DiscursoProcessado(orador="A", frase="frase 1", tokens=[0], bitset=0b01),
             DiscursoProcessado(orador="B", frase="frase 2", tokens=[0, 1], bitset=0b11),
         ]
-        resultado = processarBloco2(discursos)
+        resultado = construirGrafoSimilaridade(discursos)
 
         with tempfile.TemporaryDirectory() as diretorioTemporario:
-            salvarResultadoBloco2(resultado, Path(diretorioTemporario))
+            salvarMatrizAdjacencia(resultado, Path(diretorioTemporario))
             conteudo = (Path(diretorioTemporario) / "matrizAdjacencia.json").read_text(encoding="utf-8")
 
         linhas = conteudo.splitlines()
@@ -95,7 +95,7 @@ class TestModelagemGrafo(unittest.TestCase):
             DiscursoProcessado(orador="Ignorado", frase="sim", tokens=[], bitset=0),
             DiscursoProcessado(orador="B", frase="frase 2", tokens=[1], bitset=0b010),
         ]
-        resultado = processarBloco2(discursos)
+        resultado = construirGrafoSimilaridade(discursos)
 
         with tempfile.TemporaryDirectory() as diretorioTemporario:
             salvarDiscursosGrafo(resultado, Path(diretorioTemporario))

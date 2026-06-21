@@ -1,33 +1,53 @@
+import argparse
 import json
 from dataclasses import dataclass
 from pathlib import Path
 
 from estruturas.tabelaHash import TabelaHash
-from processamento.centralidadeGrau import processarBloco3
+from processamento.centralidadeGrau import calcularCentralidadeGrau
 from processamento.discurso import DiscursoProcessado
 from processamento.extratorPDF import extrairTextoPdf
 from processamento.limpezaEstrutural import extrairDiscursosDeTexto
-from processamento.modelagemGrafo import processarBloco2, salvarDiscursosGrafo, salvarResultadoBloco2
+from processamento.modelagemGrafo import construirGrafoSimilaridade, salvarDiscursosGrafo, salvarMatrizAdjacencia
 from processamento.processadorPLN import normalizarFrasesEmLote
+
+DIRETORIO_ENTRADA_PADRAO = Path("dados/entrada")
+DIRETORIO_SAIDA_PADRAO = Path("dados/saida")
 
 
 @dataclass
-class ResultadoBloco1:
+class ResultadoTokenizacao:
     vocabulario: TabelaHash
     discursos: list[DiscursoProcessado]
 
 
-def processarBloco1(discursos, normalizarFrase=None):
+def _removerDuplicatas(tokens):
+    vistos = TabelaHash()
+    tokensUnicos = []
+
+    for item in tokens:
+        if isinstance(item, tuple):
+            chave, original = item
+        else:
+            chave, original = item, item
+
+        if vistos.buscar(chave) is not None:
+            continue
+        vistos.inserir(chave, original)
+        tokensUnicos.append((chave, original))
+
+    return tokensUnicos
+
+
+def tokenizarDiscursos(discursos, normalizarFrase=None):
     vocabulario = TabelaHash()
     tokensPorDiscurso = []
 
     if normalizarFrase is not None:
-        # Modo individual
         for discurso in discursos:
             tokens = _removerDuplicatas(normalizarFrase(discurso.frase))
             tokensPorDiscurso.append(tokens)
     else:
-        # Modo lote
         frases = [discurso.frase for discurso in discursos]
         todosTokens = normalizarFrasesEmLote(frases)
         for tokens in todosTokens:
@@ -51,16 +71,16 @@ def processarBloco1(discursos, normalizarFrase=None):
             )
         )
 
-    return ResultadoBloco1(vocabulario=vocabulario, discursos=discursosProcessados)
+    return ResultadoTokenizacao(vocabulario=vocabulario, discursos=discursosProcessados)
 
 
-def processarPdfBloco1(caminhoPdf, normalizarFrase=None):
+def tokenizarPdf(caminhoPdf, normalizarFrase=None):
     texto = extrairTextoPdf(caminhoPdf)
     discursos = extrairDiscursosDeTexto(texto)
-    return processarBloco1(discursos, normalizarFrase=normalizarFrase)
+    return tokenizarDiscursos(discursos, normalizarFrase=normalizarFrase)
 
 
-def salvarResultadoBloco1(resultado, diretorioSaida):
+def salvarResultadoTokenizacao(resultado, diretorioSaida):
     diretorioSaida = Path(diretorioSaida)
     diretorioSaida.mkdir(parents=True, exist_ok=True)
 
@@ -85,24 +105,6 @@ def salvarResultadoBloco1(resultado, diretorioSaida):
     )
 
 
-def _removerDuplicatas(tokens):
-    vistos = TabelaHash()
-    tokensUnicos = []
-
-    for item in tokens:
-        if isinstance(item, tuple):
-            chave, original = item
-        else:
-            chave, original = item, item
-
-        if vistos.buscar(chave) is not None:
-            continue
-        vistos.inserir(chave, original)
-        tokensUnicos.append((chave, original))
-
-    return tokensUnicos
-
-
 def salvarVisualizacaoHash(tabela, caminhoArquivo):
     caminhoArquivo = Path(caminhoArquivo)
     caminhoArquivo.parent.mkdir(parents=True, exist_ok=True)
@@ -124,21 +126,69 @@ def salvarVisualizacaoHash(tabela, caminhoArquivo):
     caminhoArquivo.write_text("\n".join(linhas), encoding="utf-8")
 
 
-def main():
-    caminhoEntrada = Path("dados/entrada/entrada1.pdf")
-    diretorioSaida = Path("dados/saida")
-    resultado = processarPdfBloco1(caminhoEntrada)
-    salvarResultadoBloco1(resultado, diretorioSaida)
-    salvarVisualizacaoHash(resultado.vocabulario, diretorioSaida / "tabelaHash.txt")
-    resultadoGrafo = processarBloco2(resultado.discursos)
-    salvarResultadoBloco2(resultadoGrafo, diretorioSaida)
-    processarBloco3(resultadoGrafo.grafo, resultadoGrafo.discursos)
+def processarDocumento(caminhoPdf, diretorioSaida):
+    """Executa o pipeline completo para um único documento PDF."""
+    # Etapa 1: Tokenização e construção de vocabulário
+    resultadoTokenizacao = tokenizarPdf(caminhoPdf)
+    salvarResultadoTokenizacao(resultadoTokenizacao, diretorioSaida)
+    salvarVisualizacaoHash(resultadoTokenizacao.vocabulario, diretorioSaida / "tabelaHash.txt")
+
+    # Etapa 2: Modelagem do grafo de similaridade (Jaccard)
+    resultadoGrafo = construirGrafoSimilaridade(resultadoTokenizacao.discursos)
+    salvarMatrizAdjacencia(resultadoGrafo, diretorioSaida)
+
+    # Etapa 3: Centralidade de grau e ranking de relevância
+    calcularCentralidadeGrau(resultadoGrafo.grafo, resultadoGrafo.discursos)
     salvarDiscursosGrafo(resultadoGrafo, diretorioSaida)
-    print(f"Discursos processados: {len(resultado.discursos)}")
-    print(f"Matriz de adjacÃªncia: {resultadoGrafo.grafo.quantidadeVertices} x {resultadoGrafo.grafo.quantidadeVertices}")
-    print(f"Vocabulário: {resultado.vocabulario.quantidade} termos")
-    print(f"Saída: {diretorioSaida}")
+
+    return resultadoTokenizacao, resultadoGrafo
+
+
+def _resolverArquivosEntrada(caminhos):
+    """Retorna a lista de PDFs: dos argumentos CLI ou por varredura do diretório padrão."""
+    if caminhos:
+        return [Path(caminho) for caminho in caminhos]
+
+    if not DIRETORIO_ENTRADA_PADRAO.exists():
+        print(f"Diretório '{DIRETORIO_ENTRADA_PADRAO}' não encontrado.")
+        return []
+
+    pdfs = sorted(DIRETORIO_ENTRADA_PADRAO.glob("*.pdf"))
+    if not pdfs:
+        print(f"Nenhum PDF encontrado em '{DIRETORIO_ENTRADA_PADRAO}'.")
+
+    return pdfs
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Sumarizador Legislativo — Pipeline de processamento de debates parlamentares."
+    )
+    parser.add_argument(
+        "arquivos",
+        nargs="*",
+        help="Caminhos dos PDFs a processar. Se omitido, processa todos em dados/entrada/.",
+    )
+    args = parser.parse_args()
+
+    arquivos = _resolverArquivosEntrada(args.arquivos)
+
+    for caminhoPdf in arquivos:
+        diretorioSaida = DIRETORIO_SAIDA_PADRAO / caminhoPdf.stem
+
+        print(f"\n{'-' * 20}")
+        print(f"Processando: {caminhoPdf.name}")
+        print(f"{'-' * 20}")
+
+        resultadoTokenizacao, resultadoGrafo = processarDocumento(caminhoPdf, diretorioSaida)
+
+        grafo = resultadoGrafo.grafo
+        print(f"Discursos processados: {len(resultadoTokenizacao.discursos)}")
+        print(f"Matriz de adjacência: {grafo.quantidadeVertices} x {grafo.quantidadeVertices}")
+        print(f"Vocabulário: {resultadoTokenizacao.vocabulario.quantidade} termos")
+        print(f"Saída: {diretorioSaida}")
 
 
 if __name__ == "__main__":
     main()
+

@@ -1,7 +1,7 @@
 import unittest
 
 from estruturas.grafoMatriz import adicionarAresta, criarGrafo
-from processamento.centralidadeGrau import processarBloco3
+from processamento.centralidadeGrau import calcularCentralidadeGrau
 from processamento.discurso import DiscursoProcessado
 
 
@@ -19,7 +19,7 @@ class TestCentralidadeGrau(unittest.TestCase):
         adicionarAresta(grafo, 1, 2, 0.75)
         discursos = self._criarDiscursos(4)
 
-        processarBloco3(grafo, discursos)
+        calcularCentralidadeGrau(grafo, discursos)
 
         relevancias = [discurso.relevancia for discurso in discursos]
         self.assertEqual(relevancias, [0.75, 1.25, 1.0, 0.0])

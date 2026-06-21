@@ -6,7 +6,7 @@ from estruturas.grafoMatriz import adicionarAresta, criarGrafo
 
 
 @dataclass
-class ResultadoBloco2:
+class ResultadoGrafoSimilaridade:
     grafo: object
     discursos: list
 
@@ -21,7 +21,7 @@ def calcularIndiceJaccard(bitsetA, bitsetB):
     return intersecao.bit_count() / uniao.bit_count()
 
 
-def processarBloco2(discursos):
+def construirGrafoSimilaridade(discursos):
     discursosValidos = []
 
     for indiceOriginal, discurso in enumerate(discursos):
@@ -42,13 +42,13 @@ def processarBloco2(discursos):
             if peso > 0.0:
                 adicionarAresta(grafo, indiceOrigem, indiceDestino, peso)
 
-    return ResultadoBloco2(
+    return ResultadoGrafoSimilaridade(
         grafo=grafo,
         discursos=discursosValidos,
     )
 
 
-def salvarResultadoBloco2(resultado, diretorioSaida):
+def salvarMatrizAdjacencia(resultado, diretorioSaida):
     diretorioSaida = Path(diretorioSaida)
     diretorioSaida.mkdir(parents=True, exist_ok=True)
     caminhoMatriz = diretorioSaida / "matrizAdjacencia.json"
