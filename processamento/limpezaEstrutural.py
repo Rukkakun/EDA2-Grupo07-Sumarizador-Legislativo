@@ -25,7 +25,8 @@ _PADROES_CABECALHO = [
 ]
 
 _PADROES_CHAMADA_DE_FALA = [
-    re.compile(r"\b(?:conced\w*|pass\w*|cham\w*|dar\w*|ter\w*|estar\w*)\b.*\bpalavra\b"),
+    re.compile(r"\b(?:conced\w*|pass\w*|cham\w*|dou|da|dar\w*|tem|ter\w*|est\w*|inscrev\w*)\b.*\bpalavra\b"),
+    re.compile(r"\b(?:pec\w*|ped\w*|solicit\w*)\b.*\bpalavra\b"),
     re.compile(
         r"\b(?:orador|oradora|deputad[oa])\b.*\b(?:dispoe|tera|falar\w*)\b.*\b(?:tempo|minuto)\b"
     ),

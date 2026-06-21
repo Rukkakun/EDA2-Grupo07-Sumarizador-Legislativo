@@ -24,14 +24,23 @@ def normalizarFrasesEmLote(frases, modelo=None):
     return [_extrairTokens(doc) for doc in modelo.pipe(frases)]
 
 
+_TERMOS_SEM_CONTEUDO = frozenset({
+    "ir", "ser", "estar", "ter", "haver", "poder",
+    "querer", "vir", "fazer", "dar", "ver", "dizer",
+})
+
+
 def _extrairTokens(documento):
     tokens = []
     for token in documento:
         if token.is_space or token.is_punct or token.is_stop or token.like_num:
             continue
         termo = _normalizarParaFormaCanonica(token)
-        if termo and termo.isalpha():
-            tokens.append((termo, token.text))
+        if not termo or not termo.isalpha():
+            continue
+        if termo in _TERMOS_SEM_CONTEUDO:
+            continue
+        tokens.append((termo, token.text))
     return tokens
 
 

@@ -25,7 +25,7 @@ def construirGrafoSimilaridade(discursos):
     discursosValidos = []
 
     for indiceOriginal, discurso in enumerate(discursos):
-        if discurso.bitset.bit_count() <= 1:
+        if discurso.bitset.bit_count() <= 3:
             continue
         discurso.indiceOriginal = indiceOriginal
         discursosValidos.append(discurso)
