@@ -7,6 +7,7 @@ from estruturas.tabelaHash import TabelaHash
 from processamento.centralidadeGrau import calcularCentralidadeGrau
 from processamento.discurso import DiscursoProcessado
 from processamento.extratorPDF import extrairTextoPdf
+from processamento.geradorResumo import gerarResumoPdf, salvarResumoJson, selecionarDiscursosResumo
 from processamento.limpezaEstrutural import extrairDiscursosDeTexto
 from processamento.modelagemGrafo import construirGrafoSimilaridade, salvarDiscursosGrafo, salvarMatrizAdjacencia
 from processamento.processadorPLN import normalizarFrasesEmLote
@@ -141,7 +142,21 @@ def processarDocumento(caminhoPdf, diretorioSaida):
     calcularCentralidadeGrau(resultadoGrafo.grafo, resultadoGrafo.discursos)
     salvarDiscursosGrafo(resultadoGrafo, diretorioSaida)
 
-    return resultadoTokenizacao, resultadoGrafo
+    resultadoResumo = selecionarDiscursosResumo(resultadoGrafo.discursos)
+    salvarResumoJson(
+        resultadoResumo,
+        diretorioSaida / "resumoExtrativo.json",
+        caminhoPdf.name,
+        len(resultadoTokenizacao.discursos),
+    )
+    gerarResumoPdf(
+        resultadoResumo,
+        diretorioSaida / "resumoExtrativo.pdf",
+        caminhoPdf.name,
+        len(resultadoTokenizacao.discursos),
+    )
+
+    return resultadoTokenizacao, resultadoGrafo, resultadoResumo
 
 
 def _resolverArquivosEntrada(caminhos):
@@ -180,10 +195,11 @@ def main():
         print(f"Processando: {caminhoPdf.name}")
         print(f"{'-' * 20}")
 
-        resultadoTokenizacao, resultadoGrafo = processarDocumento(caminhoPdf, diretorioSaida)
+        resultadoTokenizacao, resultadoGrafo, resultadoResumo = processarDocumento(caminhoPdf, diretorioSaida)
 
         grafo = resultadoGrafo.grafo
         print(f"Discursos processados: {len(resultadoTokenizacao.discursos)}")
+        print(f"Frases selecionadas: {len(resultadoResumo.discursos)}")
         print(f"Matriz de adjacência: {grafo.quantidadeVertices} x {grafo.quantidadeVertices}")
         print(f"Vocabulário: {resultadoTokenizacao.vocabulario.quantidade} termos")
         print(f"Saída: {diretorioSaida}")

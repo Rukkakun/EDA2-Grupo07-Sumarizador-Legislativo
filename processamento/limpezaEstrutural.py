@@ -1,4 +1,5 @@
 import re
+import unicodedata
 
 from processamento.discurso import Discurso
 
@@ -21,6 +22,30 @@ _PADROES_CABECALHO = [
     re.compile(r"^DEPARTAMENTO DE REGISTRO OFICIAL"),
     re.compile(r"^Registro oficial sem redação final\.$"),
     re.compile(r"^\d+\s*/\s*\d+$"),
+]
+
+_PADROES_CHAMADA_DE_FALA = [
+    re.compile(r"\b(?:conced\w*|pass\w*|cham\w*|dar\w*|ter\w*|estar\w*)\b.*\bpalavra\b"),
+    re.compile(
+        r"\b(?:orador|oradora|deputad[oa])\b.*\b(?:dispoe|tera|falar\w*)\b.*\b(?:tempo|minuto)\b"
+    ),
+]
+
+_PADROES_CONTROLE_DE_SESSAO = [
+    re.compile(r"\b(?:recuper\w*|acrescent\w*|recompor\w*|distribu\w*|ped\w*)\b.*\b(?:tempo|minuto)\b"),
+    re.compile(r"\b(?:aguard\w*|complet\w*|organiza\w*|seguir\w*)\b.*\b(?:quorum|lista|inscrit\w*|ordem)\b"),
+]
+
+_PADROES_ANUNCIO_OPERACIONAL = [
+    re.compile(r"\b(?:pronunciamento|fala)\b.*\b(?:divulg\w*|veicul\w*|registr\w*)\b"),
+    re.compile(r"\b(?:divulg\w*|veicul\w*|registr\w*)\b.*\b(?:pronunciamento|fala)\b"),
+]
+
+_PADROES_CORTESIA = [
+    re.compile(
+        r"^\s*(?:(?:eu|nos|quero|queremos|gostaria)\s+)?(?:muito\s+)?(?:obrigad\w*|agradec\w*|cumpriment\w*|saud\w*|parabeniz\w*|felicit\w*)\b"
+    ),
+    re.compile(r"^\s*(?:seja\w*\s+)?bem[ -]?vind\w*\b"),
 ]
 
 _PADRAO_RUBRICA_TAQUIGRAFICA = re.compile(
@@ -92,6 +117,8 @@ def extrairDiscursosDeTexto(texto):
         fala = _normalizarEspacos(textoLimpo[inicioFala:fimFala])
 
         for frase in dividirFrases(fala):
+            if _ehRuidoProcedimental(frase):
+                continue
             discursos.append(Discurso(orador=orador, frase=frase))
 
     return discursos
@@ -120,6 +147,22 @@ def dividirFrases(texto):
 
 def _normalizarEspacos(texto):
     return re.sub(r"\s+", " ", texto).strip()
+
+
+def _normalizarParaComparacao(frase):
+    frase = unicodedata.normalize("NFKD", frase.lower())
+    return "".join(caractere for caractere in frase if not unicodedata.combining(caractere))
+
+
+def _ehRuidoProcedimental(frase):
+    fraseNormalizada = _normalizarParaComparacao(frase)
+    padroes = (
+        _PADROES_CHAMADA_DE_FALA
+        + _PADROES_CONTROLE_DE_SESSAO
+        + _PADROES_ANUNCIO_OPERACIONAL
+        + _PADROES_CORTESIA
+    )
+    return any(padrao.search(fraseNormalizada) for padrao in padroes)
 
 
 def _ehCabecalhoOuPaginacao(linha):

@@ -120,6 +120,28 @@ Este trecho mantém uma referência comum (art. 5º do Ato da Mesa).
         self.assertFalse(any("Risos" in frase for frase in frases))
         self.assertFalse(any("Palmas" in frase for frase in frases))
 
+    def testRemoveFrasesProcedimentaisEMantemPosicoesEDeliberacoes(self):
+        texto = """
+O SR. TESTE (PARTIDO - UF) - Concedo a palavra ao Deputado para falar por 3 minutos.
+Vamos recuperar o tempo de Lideranca antes do proximo orador.
+O pronunciamento sera divulgado nos meios de comunicacao da Casa.
+Muito obrigado a todos pela presenca.
+O Partido Exemplo orienta o voto nao.
+O Requerimento foi aprovado pelo Plenario.
+O projeto amplia o acesso ao servico publico.
+"""
+
+        discursos = extrairDiscursosDeTexto(texto)
+
+        self.assertEqual(
+            [discurso.frase for discurso in discursos],
+            [
+                "O Partido Exemplo orienta o voto nao.",
+                "O Requerimento foi aprovado pelo Plenario.",
+                "O projeto amplia o acesso ao servico publico.",
+            ],
+        )
+
 
 class TestBloco1(unittest.TestCase):
     def testProcessaApenasFraseEmTokensEBitsets(self):
